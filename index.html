@@ -105,6 +105,7 @@
       <div class="btns">
         <button id="saveLocalBtn" type="button">บันทึก Local</button>
         <button id="sendBtn" type="button">ส่งเข้า Google Sheet</button>
+        <button id="pingBtn" type="button">ทดสอบ URL</button>
         <button id="clearLocalBtn" type="button">ล้าง Local</button>
       </div>
 
@@ -157,8 +158,12 @@
 </div>
 
 <script>
+  // ✅ ใส่ URL /exec ของ Web App ตรงนี้
   const APPS_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbzyvbSrOyYwP2qHvKvQqad9oPDIK_OTfxfgQGDchXmOdFBCQTQDQeKyUoMOme7Kwx1Z/exec";
+
+  // เอาไว้เทสว่า URL ยิง GET ได้ไหม
+  const PING_URL = APPS_SCRIPT_URL + "?ping=1";
 
   const KEY = "ads_daily_owner_local_v2";
   const $ = (id)=>document.getElementById(id);
@@ -295,6 +300,7 @@
     $("msg").style.color = isErr ? "var(--bad)" : "var(--muted)";
   }
 
+  // ✅ แก้ปัญหา Failed to fetch (CORS/redirect) ด้วย no-cors
   async function sendToSheet(){
     const base = currentRow();
     if(!base.date) return msg("กรุณาใส่วันที่", true);
@@ -318,21 +324,22 @@
     };
 
     msg("กำลังส่งเข้า Google Sheet...");
+
     try{
-      const res = await fetch(APPS_SCRIPT_URL, {
-        method:"POST",
-        headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-      const data = await res.json().catch(()=>({ok:false,error:"Invalid JSON response"}));
-      if(!data.ok) throw new Error(data.error || "Send failed");
 
+      // no-cors อ่านผลตอบกลับไม่ได้ => ถือว่าส่งสำเร็จถ้าไม่ throw
       upsertLocal(base);
       renderLocal();
       preview();
-      msg("✅ ส่งสำเร็จ และบันทึก Local แล้ว");
+      msg("✅ ส่งคำขอแล้ว (ถ้าไม่เห็นแถวเพิ่ม ให้รอ 3–10 วิ แล้วรีเฟรชชีท)");
     }catch(e){
-      msg("❌ ส่งไม่สำเร็จ: " + e.message, true);
+      msg("❌ ส่งไม่สำเร็จ: " + (e?.message || e), true);
     }
   }
 
@@ -349,6 +356,17 @@
   });
 
   $("sendBtn").addEventListener("click", sendToSheet);
+
+  $("pingBtn").addEventListener("click", async ()=>{
+    msg("กำลังทดสอบ URL...");
+    try{
+      const r = await fetch(PING_URL, { method:"GET" });
+      const t = await r.text();
+      msg("✅ URL ใช้ได้: " + t.slice(0,120));
+    }catch(e){
+      msg("❌ ทดสอบ URL ไม่ผ่าน: " + (e?.message||e), true);
+    }
+  });
 
   $("clearLocalBtn").addEventListener("click", ()=>{
     if(confirm("ล้าง Local ทั้งหมด?")){
@@ -367,4 +385,3 @@
 </script>
 </body>
 </html>
-
