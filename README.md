@@ -1,19 +1,14 @@
-# Ads Monitor Dashboard
+# Daily Ads Dashboard (แยกคน) — เบิกทั้งหมด/ค่าบูท แยกกัน
 
-เว็บกรอกข้อมูลตรวจสอบการยิงแอด  
-คำนวณ "ยอดคุ้มค่าแอด" และส่งข้อมูลเข้า Google Sheet อัตโนมัติ
-
-## สูตรที่ใช้
+## สูตร
+- รวมใช้จ่าย = ค่าบูท + ค่าใช้จ่ายอื่นๆ
+- คงเหลือ = คงเหลือเดือนก่อน + เบิกทั้งหมด - รวมใช้จ่าย
 - ยอดคุ้มค่าแอด = ฝากแรก - ค่าบูท
-- % คุ้มค่าแอด = ยอดคุ้มค่าแอด / ค่าแอด
+- % = ยอดคุ้มค่าแอด / รวมใช้จ่าย
+- 100% = ลูกค้าฝาก - ลูกค้าถอน
+- 20% = 100% * 20%
+- กำไร = 100% - 20%
 
-## วิธีใช้งาน
-1. สร้าง Google Sheet ชื่อ `Daily_Ads`
-2. ใส่หัวคอลัมน์:
-   date | campaign | adCost | firstDeposit | boothCost | adValue | pct | mtdPct | status | note | createdAt
-3. วาง `Code.gs` ใน Apps Script แล้ว Deploy เป็น Web App
-4. นำ Web App URL ไปใส่ใน `index.html`
-5. เปิด `index.html` → กรอกข้อมูล → กดส่ง
-
-## Deploy หน้าเว็บ
-- ใช้ GitHub Pages / Vercel / Netlify
+## วิธีใช้
+1) Deploy Apps Script เป็น Web App แล้วเอา URL มาใส่ใน index.html (ตัวแปร APPS_SCRIPT_URL)
+2) เปิดเว็บ กรอกข้อมูล กดส่ง → เข้า Google Sheet
