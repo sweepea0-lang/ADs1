@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ads Monitor Dashboard</title>
+  <style>
+    body{font-family:system-ui;background:#0b1220;color:#e8eefc;padding:16px}
+    .box{max-width:520px;background:#0f1a33;border:1px solid #22304e;border-radius:12px;padding:12px}
+    input,button{width:100%;padding:10px;margin:6px 0}
+    button{cursor:pointer}
+    .ok{color:#3ddc97}.bad{color:#ff6b6b}
+  </style>
+</head>
+<body>
+
+<h2>Ads Monitor — กรอก → สรุป → ส่งเข้า Google Sheet</h2>
+
+<div class="box">
+  <label>วันที่</label>
+  <input id="date">
+
+  <label>Campaign</label>
+  <input id="campaign" placeholder="FB-ONNUTCH-01">
+
+  <label>ค่าแอด</label>
+  <input id="adCost" type="number" value="0">
+
+  <label>ฝากแรก</label>
+  <input id="firstDeposit" type="number" value="0">
+
+  <label>ค่าบูท</label>
+  <input id="boothCost" type="number" value="0">
+
+  <label>หมายเหตุ</label>
+  <input id="note">
+
+  <button onclick="send()">ส่งเข้า Google Sheet</button>
+
+  <div id="summary"></div>
+  <div id="msg"></div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbzyvbSrOyYwP2qHvKvQqad9oPDIK_OTfxfgQGDchXmOdFBCQTQDQeKyUoMOme7Kwx1Z/exec";
+
+const $ = id => document.getElementById(id);
+const num = v => isNaN(v)?0:Number(v);
+
+function calc(){
+  const adCost = num($("adCost").value);
+  const firstDeposit = num($("firstDeposit").value);
+  const boothCost = num($("boothCost").value);
+
+  const adValue = firstDeposit - boothCost;
+  const pct = adCost===0 ? 0 : adValue/adCost;
+
+  $("summary").innerHTML = `
+    <hr>
+    ยอดคุ้มค่าแอด: <b>${adValue}</b><br>
+    % คุ้มค่าแอด: <b>${(pct*100).toFixed(2)}%</b>
+  `;
+  return {adValue,pct};
+}
+
+async function send(){
+  const r = calc();
+  $("msg").textContent = "กำลังส่ง...";
+
+  const payload = {
+    date: $("date").value,
+    campaign: $("campaign").value,
+    adCost: num($("adCost").value),
+    firstDeposit: num($("firstDeposit").value),
+    boothCost: num($("boothCost").value),
+    adValue: r.adValue,
+    pct: r.pct,
+    mtdPct: 0,
+    status: "",
+    note: $("note").value
+  };
+
+  try{
+    const res = await fetch(APPS_SCRIPT_URL,{
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error);
+    $("msg").innerHTML = "<span class='ok'>✅ ส่งสำเร็จ</span>";
+  }catch(e){
+    $("msg").innerHTML = "<span class='bad'>❌ "+e.message+"</span>";
+  }
+}
+
+// auto date
+const d=new Date(); $("date").value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+["adCost","firstDeposit","boothCost"].forEach(id=>$(id).addEventListener("input",calc));
+calc();
+</script>
+
+</body>
+</html>
