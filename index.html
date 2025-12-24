@@ -3,103 +3,367 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ads Monitor Dashboard</title>
+  <title>Daily Ads Dashboard (แยกคน)</title>
   <style>
-    body{font-family:system-ui;background:#0b1220;color:#e8eefc;padding:16px}
-    .box{max-width:520px;background:#0f1a33;border:1px solid #22304e;border-radius:12px;padding:12px}
-    input,button{width:100%;padding:10px;margin:6px 0}
-    button{cursor:pointer}
-    .ok{color:#3ddc97}.bad{color:#ff6b6b}
+    :root{--bg:#0b1220;--card:#0f1a33;--bd:#22304e;--muted:#a9b8dd;--ok:#3ddc97;--warn:#ffd166;--bad:#ff6b6b;}
+    body{font-family:system-ui,Segoe UI,Tahoma,sans-serif;margin:0;background:var(--bg);color:#e8eefc}
+    header{padding:14px 16px;border-bottom:1px solid var(--bd);background:var(--card);position:sticky;top:0}
+    h1{margin:0;font-size:18px}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:980px){.grid{grid-template-columns:1.1fr .9fr}}
+    .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px}
+    .row{display:grid;grid-template-columns:1fr 260px;gap:10px;align-items:center;margin:10px 0}
+    input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a5f;background:#0b1220;color:#e8eefc}
+    textarea{min-height:70px;resize:vertical}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{padding:10px 12px;border-radius:10px;border:1px solid #2a3a5f;background:#122145;color:#e8eefc;cursor:pointer}
+    button:hover{filter:brightness(1.08)}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid #2a3a5f;background:#0b1220}
+    .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+    .note{color:var(--muted);font-size:12px;margin-top:8px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid var(--bd);padding:10px;text-align:left;white-space:nowrap}
+    th{color:var(--muted);font-weight:600}
+    .right{text-align:right}
   </style>
 </head>
 <body>
+<header>
+  <h1>Daily Ads Dashboard — เช็คแอดรายวัน (แยกคน) | เบิกทั้งหมด/ค่าบูท แยกกัน</h1>
+  <div class="note">
+    สูตร: รวมใช้จ่าย=ค่าบูท+ค่าใช้จ่ายอื่นๆ, คงเหลือ=คงเหลือเดือนก่อน+เบิกทั้งหมด-รวมใช้จ่าย,
+    ยอดคุ้มค่าแอด=ฝากแรก-ค่าบูท, % = ยอดคุ้มค่าแอด/รวมใช้จ่าย
+  </div>
+</header>
 
-<h2>Ads Monitor — กรอก → สรุป → ส่งเข้า Google Sheet</h2>
+<div class="wrap">
+  <div class="grid">
+    <div class="card">
+      <h2 style="margin:0 0 10px;font-size:15px">กรอกข้อมูลรายวัน</h2>
 
-<div class="box">
-  <label>วันที่</label>
-  <input id="date">
+      <div class="row">
+        <div><b>วันที่</b><div class="note">YYYY-MM-DD</div></div>
+        <input id="date" placeholder="2025-12-24">
+      </div>
 
-  <label>Campaign</label>
-  <input id="campaign" placeholder="FB-ONNUTCH-01">
+      <div class="row">
+        <div><b>ชื่อ เซียน / คนยิงแอด</b></div>
+        <input id="owner" placeholder="เช่น บอย">
+      </div>
 
-  <label>ค่าแอด</label>
-  <input id="adCost" type="number" value="0">
+      <div class="row">
+        <div><b>แคมเปญ</b><div class="note">ถ้าไม่มีใส่ “รวม”</div></div>
+        <input id="campaign" placeholder="รวม">
+      </div>
 
-  <label>ฝากแรก</label>
-  <input id="firstDeposit" type="number" value="0">
+      <div class="row">
+        <div><b>คงเหลือเดือนก่อน</b></div>
+        <input id="prevRemain" type="number" step="1" value="0">
+      </div>
 
-  <label>ค่าบูท</label>
-  <input id="boothCost" type="number" value="0">
+      <div class="row">
+        <div><b>เบิกทั้งหมด</b><div class="note">เงินที่เบิกมาใช้</div></div>
+        <input id="withdrawAll" type="number" step="1" value="0">
+      </div>
 
-  <label>หมายเหตุ</label>
-  <input id="note">
+      <div class="row">
+        <div><b>ค่าบูท</b></div>
+        <input id="boothCost" type="number" step="1" value="0">
+      </div>
 
-  <button onclick="send()">ส่งเข้า Google Sheet</button>
+      <div class="row">
+        <div><b>ค่าใช้จ่ายอื่นๆ</b></div>
+        <input id="otherCost" type="number" step="1" value="0">
+      </div>
 
-  <div id="summary"></div>
-  <div id="msg"></div>
+      <div class="row">
+        <div><b>ยูสที่ปิดได้</b></div>
+        <input id="usersClosed" type="number" step="1" value="0">
+      </div>
+
+      <div class="row">
+        <div><b>ฝากแรก</b></div>
+        <input id="firstDeposit" type="number" step="1" value="0">
+      </div>
+
+      <div class="row">
+        <div><b>ลูกค้าฝาก</b><div class="note">ใส่ถ้ามี</div></div>
+        <input id="custDeposit" type="number" step="1" value="0">
+      </div>
+
+      <div class="row">
+        <div><b>ลูกค้าถอน</b><div class="note">ใส่ถ้ามี</div></div>
+        <input id="custWithdraw" type="number" step="1" value="0">
+      </div>
+
+      <div class="row">
+        <div><b>หมายเหตุ</b></div>
+        <textarea id="note" placeholder="เช่น ยิงครีเอทีฟ A / กลุ่มอ่อนนุช"></textarea>
+      </div>
+
+      <div class="btns">
+        <button id="saveLocalBtn" type="button">บันทึก Local</button>
+        <button id="sendBtn" type="button">ส่งเข้า Google Sheet</button>
+        <button id="clearLocalBtn" type="button">ล้าง Local</button>
+      </div>
+
+      <div class="note" id="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 10px;font-size:15px">สรุปอัตโนมัติ (รายการนี้)</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <span class="pill">รวมใช้จ่าย <b id="kTotalCost">0</b></span>
+        <span class="pill">คงเหลือ <b id="kRemain">0</b></span>
+        <span class="pill">ยอดคุ้มค่าแอด <b id="kValue">0</b></span>
+        <span class="pill">% คุ้มค่า <b id="kPct">0%</b></span>
+        <span class="pill">CPA <b id="kCPA">0</b></span>
+        <span class="pill">100% <b id="kNet100">0</b></span>
+        <span class="pill">20% <b id="kCompany20">0</b></span>
+        <span class="pill">กำไร <b id="kProfit">0</b></span>
+        <span class="pill">MTD% (สะสมเดือน/คน) <b id="kMtd">0%</b></span>
+        <span class="pill">Status <b id="kStatus">-</b></span>
+      </div>
+      <div class="note" style="margin-top:10px">
+        เกณฑ์ปิดแอด (MTD%): วัน 1–5 ≤ -50% | วัน 1–10 ≤ -40% | วัน 1–20 ≤ -30%
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h2 style="margin:0 0 10px;font-size:15px">รายการ Local (ใช้คำนวณ MTD% ต่อคน)</h2>
+    <div style="overflow:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Owner</th><th>Campaign</th>
+            <th class="right">เบิกทั้งหมด</th>
+            <th class="right">ค่าบูท</th>
+            <th class="right">อื่นๆ</th>
+            <th class="right">รวมใช้จ่าย</th>
+            <th class="right">ฝากแรก</th>
+            <th class="right">ยอดคุ้มค่า</th>
+            <th class="right">%Day</th>
+            <th class="right">MTD%</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyLocal"></tbody>
+      </table>
+    </div>
+    <div class="note">คลิกแถวเพื่อโหลดกลับไปแก้ไข</div>
+  </div>
 </div>
 
 <script>
-const APPS_SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbzyvbSrOyYwP2qHvKvQqad9oPDIK_OTfxfgQGDchXmOdFBCQTQDQeKyUoMOme7Kwx1Z/exec";
+  const APPS_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbzyvbSrOyYwP2qHvKvQqad9oPDIK_OTfxfgQGDchXmOdFBCQTQDQeKyUoMOme7Kwx1Z/exec";
 
-const $ = id => document.getElementById(id);
-const num = v => isNaN(v)?0:Number(v);
+  const KEY = "ads_daily_owner_local_v2";
+  const $ = (id)=>document.getElementById(id);
+  const num = (v)=>{ const n = Number(v); return Number.isFinite(n)? n : 0; };
+  const fmt = (n)=> new Intl.NumberFormat('th-TH',{maximumFractionDigits:2}).format(n);
+  const ym = (d)=> (d||"").slice(0,7);
 
-function calc(){
-  const adCost = num($("adCost").value);
-  const firstDeposit = num($("firstDeposit").value);
-  const boothCost = num($("boothCost").value);
+  function loadLocal(){ try{return JSON.parse(localStorage.getItem(KEY)||"[]");}catch{return []} }
+  function saveLocal(rows){ localStorage.setItem(KEY, JSON.stringify(rows)); }
 
-  const adValue = firstDeposit - boothCost;
-  const pct = adCost===0 ? 0 : adValue/adCost;
-
-  $("summary").innerHTML = `
-    <hr>
-    ยอดคุ้มค่าแอด: <b>${adValue}</b><br>
-    % คุ้มค่าแอด: <b>${(pct*100).toFixed(2)}%</b>
-  `;
-  return {adValue,pct};
-}
-
-async function send(){
-  const r = calc();
-  $("msg").textContent = "กำลังส่ง...";
-
-  const payload = {
-    date: $("date").value,
-    campaign: $("campaign").value,
-    adCost: num($("adCost").value),
-    firstDeposit: num($("firstDeposit").value),
-    boothCost: num($("boothCost").value),
-    adValue: r.adValue,
-    pct: r.pct,
-    mtdPct: 0,
-    status: "",
-    note: $("note").value
-  };
-
-  try{
-    const res = await fetch(APPS_SCRIPT_URL,{
-      method:"POST",
-      headers:{ "Content-Type":"text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if(!data.ok) throw new Error(data.error);
-    $("msg").innerHTML = "<span class='ok'>✅ ส่งสำเร็จ</span>";
-  }catch(e){
-    $("msg").innerHTML = "<span class='bad'>❌ "+e.message+"</span>";
+  function statusByRule(dateStr, mtdPct){
+    const d = Number((dateStr||"").slice(8,10)) || 0;
+    let th = -0.30;
+    if(d>=1 && d<=5) th = -0.50;
+    else if(d<=10) th = -0.40;
+    else if(d<=20) th = -0.30;
+    return (mtdPct <= th) ? "ปิดแอด" : "ยิงต่อ";
   }
-}
 
-// auto date
-const d=new Date(); $("date").value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-["adCost","firstDeposit","boothCost"].forEach(id=>$(id).addEventListener("input",calc));
-calc();
+  function currentRow(){
+    return {
+      date: $("date").value.trim(),
+      owner: $("owner").value.trim(),
+      campaign: ($("campaign").value.trim() || "รวม"),
+      prevRemain: num($("prevRemain").value),
+      withdrawAll: num($("withdrawAll").value),
+      boothCost: num($("boothCost").value),
+      otherCost: num($("otherCost").value),
+      usersClosed: num($("usersClosed").value),
+      firstDeposit: num($("firstDeposit").value),
+      custDeposit: num($("custDeposit").value),
+      custWithdraw: num($("custWithdraw").value),
+      note: $("note").value.trim()
+    };
+  }
+
+  function compute(row, rowsAll){
+    const totalCost = row.boothCost + row.otherCost; // รวมใช้จ่าย
+    const remain = row.prevRemain + row.withdrawAll - totalCost;
+
+    const adValue = row.firstDeposit - row.boothCost; // ยอดคุ้มค่าแอด
+    const pct = totalCost === 0 ? 0 : adValue / totalCost; // % คุ้มค่า (ต่อวัน)
+
+    const cpa = row.usersClosed === 0 ? 0 : totalCost / row.usersClosed;
+
+    const net100 = row.custDeposit - row.custWithdraw; // 100%
+    const company20 = net100 * 0.20;                   // 20%
+    const profit = net100 - company20;                 // กำไร
+
+    // MTD% ต่อคน (สะสมเดือนเดียวกันจนถึงวันนั้น)
+    const month = ym(row.date);
+    const list = rowsAll
+      .filter(r => ym(r.date)===month && r.owner===row.owner)
+      .filter(r => r.date <= row.date);
+
+    const sumTotalCost = list.reduce((s,r)=> s + (num(r.boothCost)+num(r.otherCost)), 0);
+    const sumAdValue = list.reduce((s,r)=> s + (num(r.firstDeposit)-num(r.boothCost)), 0);
+    const mtdPct = sumTotalCost === 0 ? 0 : sumAdValue / sumTotalCost;
+
+    const status = statusByRule(row.date, mtdPct);
+
+    return { totalCost, remain, adValue, pct, cpa, net100, company20, profit, mtdPct, status };
+  }
+
+  function preview(){
+    const base = currentRow();
+    const rows = loadLocal().concat([base]);
+    const r = compute(base, rows);
+
+    $("kTotalCost").textContent = fmt(r.totalCost);
+    $("kRemain").textContent = fmt(r.remain);
+    $("kValue").textContent = fmt(r.adValue);
+    $("kPct").textContent = (r.pct*100).toFixed(2) + "%";
+    $("kCPA").textContent = fmt(r.cpa);
+    $("kNet100").textContent = fmt(r.net100);
+    $("kCompany20").textContent = fmt(r.company20);
+    $("kProfit").textContent = fmt(r.profit);
+    $("kMtd").textContent = (r.mtdPct*100).toFixed(2) + "%";
+    $("kStatus").textContent = r.status;
+    $("kStatus").className = r.status==="ปิดแอด" ? "bad" : "ok";
+  }
+
+  function upsertLocal(row){
+    const rows = loadLocal();
+    const key = `${row.date}__${row.owner}__${row.campaign}`;
+    const idx = rows.findIndex(r => `${r.date}__${r.owner}__${r.campaign}` === key);
+    if(idx>=0) rows[idx]=row; else rows.push(row);
+    saveLocal(rows);
+  }
+
+  function renderLocal(){
+    const rows = loadLocal().sort((a,b)=> a.date>b.date? -1 : a.date<b.date? 1 : 0);
+    const tb = $("tbodyLocal");
+    tb.innerHTML = "";
+
+    for(const r0 of rows){
+      const r = compute(r0, rows);
+      const tr = document.createElement("tr");
+      tr.style.cursor="pointer";
+      tr.innerHTML = `
+        <td>${r0.date}</td><td>${r0.owner}</td><td>${r0.campaign}</td>
+        <td class="right">${fmt(r0.withdrawAll)}</td>
+        <td class="right">${fmt(r0.boothCost)}</td>
+        <td class="right">${fmt(r0.otherCost)}</td>
+        <td class="right">${fmt(r.totalCost)}</td>
+        <td class="right">${fmt(r0.firstDeposit)}</td>
+        <td class="right">${fmt(r.adValue)}</td>
+        <td class="right">${(r.pct*100).toFixed(2)}%</td>
+        <td class="right">${(r.mtdPct*100).toFixed(2)}%</td>
+        <td class="${r.status==='ปิดแอด'?'bad':'ok'}"><b>${r.status}</b></td>
+      `;
+      tr.addEventListener("click", ()=>{
+        $("date").value = r0.date || "";
+        $("owner").value = r0.owner || "";
+        $("campaign").value = r0.campaign || "รวม";
+        $("prevRemain").value = r0.prevRemain || 0;
+        $("withdrawAll").value = r0.withdrawAll || 0;
+        $("boothCost").value = r0.boothCost || 0;
+        $("otherCost").value = r0.otherCost || 0;
+        $("usersClosed").value = r0.usersClosed || 0;
+        $("firstDeposit").value = r0.firstDeposit || 0;
+        $("custDeposit").value = r0.custDeposit || 0;
+        $("custWithdraw").value = r0.custWithdraw || 0;
+        $("note").value = r0.note || "";
+        preview();
+        window.scrollTo({top:0, behavior:"smooth"});
+      });
+      tb.appendChild(tr);
+    }
+  }
+
+  function msg(t,isErr=false){
+    $("msg").textContent = t;
+    $("msg").style.color = isErr ? "var(--bad)" : "var(--muted)";
+  }
+
+  async function sendToSheet(){
+    const base = currentRow();
+    if(!base.date) return msg("กรุณาใส่วันที่", true);
+    if(!base.owner) return msg("กรุณาใส่ชื่อเซียน/คนยิงแอด", true);
+
+    const rows = loadLocal().concat([base]);
+    const r = compute(base, rows);
+
+    const payload = {
+      ...base,
+      totalCost: r.totalCost,
+      remain: r.remain,
+      adValue: r.adValue,
+      pct: r.pct,
+      mtdPct: r.mtdPct,
+      status: r.status,
+      cpa: r.cpa,
+      net100: r.net100,
+      company20: r.company20,
+      profit: r.profit
+    };
+
+    msg("กำลังส่งเข้า Google Sheet...");
+    try{
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method:"POST",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(()=>({ok:false,error:"Invalid JSON response"}));
+      if(!data.ok) throw new Error(data.error || "Send failed");
+
+      upsertLocal(base);
+      renderLocal();
+      preview();
+      msg("✅ ส่งสำเร็จ และบันทึก Local แล้ว");
+    }catch(e){
+      msg("❌ ส่งไม่สำเร็จ: " + e.message, true);
+    }
+  }
+
+  // wire
+  ["date","owner","campaign","prevRemain","withdrawAll","boothCost","otherCost","usersClosed","firstDeposit","custDeposit","custWithdraw","note"]
+    .forEach(id => { $(id).addEventListener("input", preview); $(id).addEventListener("change", preview); });
+
+  $("saveLocalBtn").addEventListener("click", ()=>{
+    const r = currentRow();
+    if(!r.date) return msg("กรุณาใส่วันที่", true);
+    if(!r.owner) return msg("กรุณาใส่ชื่อเซียน/คนยิงแอด", true);
+    upsertLocal(r); renderLocal(); preview();
+    msg("✅ บันทึก Local แล้ว");
+  });
+
+  $("sendBtn").addEventListener("click", sendToSheet);
+
+  $("clearLocalBtn").addEventListener("click", ()=>{
+    if(confirm("ล้าง Local ทั้งหมด?")){
+      localStorage.removeItem(KEY);
+      renderLocal(); preview();
+      msg("ล้าง Local แล้ว");
+    }
+  });
+
+  // init date
+  const d = new Date();
+  const pad = n => String(n).padStart(2,"0");
+  $("date").value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  renderLocal();
+  preview();
 </script>
-
 </body>
 </html>
